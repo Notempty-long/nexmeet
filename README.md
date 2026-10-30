@@ -38,16 +38,17 @@ Requires Python 3.10+.
 **Windows**
 
 ```bat
-start.bat
+python3 -m venv .venv
+pip install -r requirements.txt
+.venv/bin/python server.py
 ```
 
 **macOS / Linux**
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python -m venv .venv
 pip install -r requirements.txt
-python server.py
+python .venv/Scripts\server.py
 ```
 
 Then open <http://localhost:8000>.
@@ -110,37 +111,12 @@ audience also stops any active presentation.
 
 There are no CDN dependencies: PDF.js ships in `static/vendor/pdfjs/`.
 
-## Share a public link (Cloudflare Quick Tunnel)
-
-Double-click **`run.bat`** (or run `.\run.ps1`). The script will:
-
-1. create the virtual environment and install dependencies if needed,
-2. download `cloudflared` into `tools\` on first use (about 55 MB),
-3. start NexMeet on `127.0.0.1:8000` if it is not already running,
-4. open a Cloudflare Quick Tunnel and wait for it to become reachable,
-5. copy the public `https://….trycloudflare.com` URL to your clipboard and
-   open it in Chrome.
-
-Public links are HTTPS, so camera, microphone and screen sharing work on other
-devices. The URL is temporary and changes each time you run the script. Use
-**`stop.bat`** to stop the tunnel and the server that `run.bat` started.
-
-Useful options:
-
-```powershell
-.\run.ps1 -Port 8080            # different local port
-.\run.ps1 -BindHost 0.0.0.0    # also expose NexMeet to your LAN
-.\run.ps1 -NoBrowser           # do not open a browser
-.\run.ps1 -CloudflaredPath "C:\Tools\cloudflared.exe"
-```
 
 Logs are written to `logs\`. A Quick Tunnel is fine for demos and personal
 use, but it has no uptime guarantee. For a stable hostname, configure a named
 Cloudflare Tunnel or deploy behind your own reverse proxy instead.
 
-> **Security:** `run.bat` makes the landing page publicly reachable. Anyone
-> with the URL can create rooms (joining a room still requires its code). Use
-> `stop.bat` when you are done, and do not share links you do not want public.
+
 
 ## Configuration
 
@@ -294,9 +270,6 @@ static/favicon.svg     favicon
 tests/smoke_test.py    end-to-end signalling + webinar test
 tests/public_test.py   HTTPS/WSS check through a public tunnel
 requirements.txt       Flask + flask-sock
-start.bat              Windows launcher (local only)
-run.bat / run.ps1      local server + public Cloudflare Quick Tunnel
-stop.bat / stop.ps1    stop the server and tunnel started by run.bat
 tools/                 downloaded cloudflared.exe (created on first run)
 logs/                  server and tunnel logs (created on first run)
 ```
