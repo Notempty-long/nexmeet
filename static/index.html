@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070a13">
+  <meta name="description" content="NexMeet — private, self-hosted video meetings and webinars with chat, screen sharing and host controls.">
+  <title>NexMeet — meetings that stay yours</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+  <!-- ------------------------------------------------------------------ -->
+  <!-- SVG icon sprite                                                     -->
+  <!-- ------------------------------------------------------------------ -->
+  <svg class="svg-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="icon-mic" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></symbol>
+    <symbol id="icon-mic-off" viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></symbol>
+    <symbol id="icon-camera" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></symbol>
+    <symbol id="icon-camera-off" viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/></symbol>
+    <symbol id="icon-screen" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></symbol>
+    <symbol id="icon-screen-off" viewBox="0 0 24 24"><path d="M13 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7m2 0h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
+    <symbol id="icon-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.5L2.5 15.5a2.1 2.1 0 0 1 3-3L7 14"/></symbol>
+    <symbol id="icon-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="icon-phone-off" viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></symbol>
+    <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="icon-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+    <symbol id="icon-crown" viewBox="0 0 24 24"><path d="M2.5 18.5 4 8l5 4 3-7 3 7 5-4 1.5 10.5z"/><path d="M4 21h16"/></symbol>
+    <symbol id="icon-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="icon-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+    <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="icon-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="icon-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+    <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="icon-video-logo" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="3" ry="3"/></symbol>
+    <symbol id="icon-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></symbol>
+    <symbol id="icon-volume" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></symbol>
+    <symbol id="icon-broadcast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></symbol>
+    <symbol id="icon-audience" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/><path d="M3 11a2.5 2.5 0 0 1 0 5m18-5a2.5 2.5 0 0 0 0 5"/></symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24"><polygon points="7 4 20 12 7 20 7 4"/></symbol>
+    <symbol id="icon-pause" viewBox="0 0 24 24"><line x1="8" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="16" y2="20"/></symbol>
+    <symbol id="icon-chevron-left" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></symbol>
+    <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+  </svg>
+
+  <div id="app">
+
+    <!-- ================================================================ -->
+    <!-- Landing                                                          -->
+    <!-- ================================================================ -->
+    <section id="landingView" class="view">
+      <header class="site-header">
+        <a class="brand" href="#" id="brandHome">
+          <span class="brand-mark"><svg class="icon"><use href="#icon-video-logo"></use></svg></span>
+          <span class="brand-name">NexMeet</span>
+        </a>
+        <div class="header-actions">
+          <span class="pill"><span class="pill-dot"></span> Self-hosted · WebRTC</span>
+        </div>
+      </header>
+
+      <main class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow">Private by default</span>
+          <h1>Meetings that<br><span class="gradient-text">stay yours.</span></h1>
+          <p class="hero-sub">
+            Crystal-clear video calls with chat, screen sharing and host
+            controls — running on your own server, with no accounts and no
+            third-party trackers.
+          </p>
+          <div class="hero-actions">
+            <button id="newMeetingBtn" class="btn btn-primary btn-lg">
+              <svg class="icon"><use href="#icon-video-logo"></use></svg>
+              Start a meeting
+            </button>
+            <button id="newWebinarBtn" class="btn btn-secondary btn-lg">
+              <svg class="icon"><use href="#icon-broadcast"></use></svg>
+              Start a webinar
+            </button>
+            <a class="btn btn-ghost btn-lg" href="#joinCard">
+              <svg class="icon"><use href="#icon-link"></use></svg>
+              Join with a code
+            </a>
+          </div>
+          <ul class="hero-points">
+            <li><svg class="icon"><use href="#icon-check"></use></svg> No sign-up required</li>
+            <li><svg class="icon"><use href="#icon-check"></use></svg> Peer-to-peer media</li>
+            <li><svg class="icon"><use href="#icon-check"></use></svg> Works in the browser</li>
+          </ul>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hero-glow"></div>
+          <div class="mock-call">
+            <div class="mock-topbar">
+              <span class="mock-dot"></span>
+              <span class="mock-title">design-sync</span>
+              <span class="mock-live">LIVE</span>
+            </div>
+            <div class="mock-grid">
+              <div class="mock-tile mock-tile-1">
+                <span class="mock-avatar">MA</span>
+                <span class="mock-name">Maya</span>
+              </div>
+              <div class="mock-tile mock-tile-2">
+                <span class="mock-avatar">JL</span>
+                <span class="mock-name">Jonas</span>
+              </div>
+              <div class="mock-tile mock-tile-3">
+                <span class="mock-avatar">AK</span>
+                <span class="mock-name">Amina</span>
+                <span class="mock-mic"><svg class="icon"><use href="#icon-mic-off"></use></svg></span>
+              </div>
+              <div class="mock-tile mock-tile-4">
+                <span class="mock-avatar">You</span>
+                <span class="mock-name">You</span>
+                <span class="mock-speaking"></span>
+              </div>
+            </div>
+            <div class="mock-controls">
+              <span class="mock-control"><svg class="icon"><use href="#icon-mic"></use></svg></span>
+              <span class="mock-control"><svg class="icon"><use href="#icon-camera"></use></svg></span>
+              <span class="mock-control"><svg class="icon"><use href="#icon-screen"></use></svg></span>
+              <span class="mock-control mock-control-danger"><svg class="icon"><use href="#icon-phone-off"></use></svg></span>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <section class="join-section" id="joinCard">
+        <div class="join-card">
+          <div class="join-card-copy">
+            <h2>Ready to meet?</h2>
+            <p>Spin up a room and share the link. Everyone joins from the browser — nothing to install.</p>
+          </div>
+          <div class="join-card-actions">
+            <button id="newMeetingBtn2" class="btn btn-primary">
+              <svg class="icon"><use href="#icon-user-plus"></use></svg>
+              New meeting
+            </button>
+            <button id="newWebinarBtn2" class="btn btn-secondary">
+              <svg class="icon"><use href="#icon-broadcast"></use></svg>
+              New webinar
+            </button>
+            <div class="join-divider"><span>or</span></div>
+            <form id="joinForm" novalidate>
+              <label for="joinCodeInput">Room code or link</label>
+              <div class="input-row">
+                <input id="joinCodeInput" type="text" placeholder="abc-defg-hij" autocomplete="off" spellcheck="false">
+                <button type="submit" class="btn btn-secondary">Join</button>
+              </div>
+              <p id="joinError" class="form-error hidden"></p>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="features">
+        <article class="feature-card">
+          <span class="feature-icon"><svg class="icon"><use href="#icon-lock"></use></svg></span>
+          <h3>Your server, your data</h3>
+          <p>Signalling stays on your machine. Audio and video travel directly between participants.</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-icon"><svg class="icon"><use href="#icon-zap"></use></svg></span>
+          <h3>Fast to start</h3>
+          <p>One Python file, one static client, zero API keys. Run it locally or drop it on a small VPS.</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-icon"><svg class="icon"><use href="#icon-globe"></use></svg></span>
+          <h3>Everything in the call</h3>
+          <p>Chat, raised hands, screen sharing, participant controls and host tools built in.</p>
+        </article>
+      </section>
+
+      <footer class="site-footer">
+        <span>NexMeet · built with WebRTC</span>
+        <span class="footer-muted">Use a TURN server for reliable calls across strict networks.</span>
+      </footer>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- Pre-join                                                         -->
+    <!-- ================================================================ -->
+    <section id="prejoinView" class="view hidden">
+      <header class="site-header prejoin-header">
+        <a class="brand" href="#" id="prejoinBrand">
+          <span class="brand-mark"><svg class="icon"><use href="#icon-video-logo"></use></svg></span>
+          <span class="brand-name">NexMeet</span>
+        </a>
+        <button id="prejoinBackBtn" class="btn btn-ghost btn-sm">
+          <svg class="icon"><use href="#icon-arrow-left"></use></svg>
+          Back
+        </button>
+      </header>
+
+      <main class="prejoin-layout">
+        <div class="preview-stage" id="previewStage">
+          <video id="previewVideo" autoplay muted playsinline></video>
+          <div id="previewAvatar" class="preview-avatar hidden"><span id="previewInitials">?</span></div>
+          <div class="preview-topline">
+            <span class="preview-badge" id="previewBadge">Camera off</span>
+            <span class="preview-badge preview-badge-soft" id="previewHint">Preview</span>
+          </div>
+          <div class="preview-name" id="previewName">Your name</div>
+          <div class="preview-controls">
+            <button id="previewMicBtn" class="round-btn" type="button" aria-label="Toggle microphone" title="Toggle microphone">
+              <svg class="icon"><use href="#icon-mic"></use></svg>
+            </button>
+            <button id="previewCamBtn" class="round-btn" type="button" aria-label="Toggle camera" title="Toggle camera">
+              <svg class="icon"><use href="#icon-camera"></use></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="prejoin-panel">
+          <div class="room-chip">
+            <span class="room-chip-label">Room</span>
+            <strong id="prejoinRoomCode">—</strong>
+            <button id="prejoinCopyBtn" class="icon-btn" type="button" aria-label="Copy invite link" title="Copy invite link">
+              <svg class="icon"><use href="#icon-copy"></use></svg>
+            </button>
+          </div>
+          <h1 id="prejoinTitle">Join the meeting</h1>
+          <p id="prejoinSub" class="prejoin-sub">Check your camera and mic, then jump in. No account needed.</p>
+          <p id="prejoinModeNote" class="prejoin-mode-note hidden">
+            <svg class="icon"><use href="#icon-broadcast"></use></svg>
+            <span>You're starting a webinar. Everyone who joins starts in the audience until you invite them to speak.</span>
+          </p>
+
+          <label class="field-label" for="nameInput">Your name</label>
+          <input id="nameInput" class="text-input" type="text" maxlength="40" placeholder="e.g. Amina K." autocomplete="name">
+
+          <p id="deviceNote" class="device-note"></p>
+          <p id="prejoinError" class="form-error hidden"></p>
+
+          <button id="joinBtn" class="btn btn-primary btn-lg btn-block">
+            <svg class="icon"><use href="#icon-video-logo"></use></svg>
+            Join now
+          </button>
+
+          <div class="prejoin-footnote">
+            <svg class="icon"><use href="#icon-shield"></use></svg>
+            <span>Media is encrypted in transit (DTLS-SRTP) and sent peer-to-peer.</span>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- Meeting room                                                     -->
+    <!-- ================================================================ -->
+    <section id="roomView" class="view hidden">
+      <header class="room-header">
+        <div class="room-header-left">
+          <a class="brand brand-sm" href="#" id="roomBrand">
+            <span class="brand-mark"><svg class="icon"><use href="#icon-video-logo"></use></svg></span>
+            <span class="brand-name">NexMeet</span>
+          </a>
+          <div class="room-meta">
+            <span class="room-title" id="roomTitle">Room</span>
+            <span id="modeBadge" class="mode-badge hidden">Webinar</span>
+            <span class="room-dot"></span>
+            <span class="call-timer" id="callTimer">00:00</span>
+          </div>
+        </div>
+        <div class="room-header-right">
+          <button id="copyLinkBtn" class="btn btn-ghost btn-sm">
+            <svg class="icon"><use href="#icon-link"></use></svg>
+            <span class="btn-label">Copy invite</span>
+          </button>
+          <button id="participantCount" class="participant-count" type="button" title="Show participants">
+            <svg class="icon"><use href="#icon-users"></use></svg>
+            <span id="participantCountLabel">1</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="room-main">
+        <div class="video-area">
+          <div id="videoGrid" class="video-grid"></div>
+          <div id="webinarBar" class="webinar-bar hidden">
+            <svg class="icon"><use href="#icon-broadcast"></use></svg>
+            <span id="webinarBarText">Webinar</span>
+          </div>
+          <div id="presentBar" class="present-bar hidden" role="group" aria-label="Presentation controls">
+            <span class="present-dot" aria-hidden="true"></span>
+            <span id="presentLabel" class="present-label">Presenting</span>
+            <button id="presentPlayBtn" class="present-action hidden" type="button" aria-label="Pause video" title="Pause">
+              <svg class="icon"><use href="#icon-pause"></use></svg>
+            </button>
+            <input id="presentSeek" class="present-seek hidden" type="range" min="0" max="1000" step="1" value="0" aria-label="Seek video">
+            <span id="presentTime" class="present-time hidden">0:00 / 0:00</span>
+            <button id="presentPrevBtn" class="present-action hidden" type="button" aria-label="Previous page" title="Previous page">
+              <svg class="icon"><use href="#icon-chevron-left"></use></svg>
+            </button>
+            <span id="presentPage" class="present-page hidden">1 / 1</span>
+            <button id="presentNextBtn" class="present-action hidden" type="button" aria-label="Next page" title="Next page">
+              <svg class="icon"><use href="#icon-chevron-right"></use></svg>
+            </button>
+            <button id="presentStopBtn" class="present-action present-stop" type="button" aria-label="Stop presenting" title="Stop presenting">
+              <svg class="icon"><use href="#icon-close"></use></svg>
+            </button>
+          </div>
+          <div id="audioPrompt" class="audio-prompt hidden">
+            <button id="enableAudioBtn" class="btn btn-secondary btn-sm">
+              <svg class="icon"><use href="#icon-volume"></use></svg>
+              Click to enable audio
+            </button>
+          </div>
+        </div>
+
+        <aside id="sidePanel" class="side-panel hidden" aria-label="Meeting panel">
+          <div class="panel-header">
+            <div class="panel-tabs" role="tablist">
+              <button class="panel-tab is-active" data-panel="chat" role="tab" aria-selected="true">
+                Chat <span id="chatTabBadge" class="tab-badge hidden">0</span>
+              </button>
+              <button class="panel-tab" data-panel="people" role="tab" aria-selected="false">
+                People <span id="peopleTabCount" class="tab-count">1</span>
+              </button>
+            </div>
+            <button id="closePanelBtn" class="icon-btn" type="button" aria-label="Close panel" title="Close panel">
+              <svg class="icon"><use href="#icon-close"></use></svg>
+            </button>
+          </div>
+
+          <section id="chatPanel" class="panel-body panel-chat">
+            <div id="chatList" class="chat-list" aria-live="polite"></div>
+            <form id="chatForm" class="chat-form">
+              <textarea id="chatInput" rows="1" maxlength="1000" placeholder="Message the room…" aria-label="Message"></textarea>
+              <button id="chatSendBtn" class="icon-btn send-btn" type="submit" aria-label="Send message" title="Send message">
+                <svg class="icon"><use href="#icon-send"></use></svg>
+              </button>
+            </form>
+          </section>
+
+          <section id="peoplePanel" class="panel-body panel-people hidden">
+            <div class="people-head">
+              <span id="peopleCount">1 participant</span>
+              <span class="people-hint">Host tools are marked with a crown</span>
+            </div>
+            <div id="peopleList" class="people-list"></div>
+            <div id="hostTools" class="host-tools hidden">
+              <button id="muteAllBtn" class="btn btn-secondary btn-sm btn-block">
+                <svg class="icon"><use href="#icon-mic-off"></use></svg>
+                Mute everyone
+              </button>
+              <button id="endMeetingBtn" class="btn btn-danger-soft btn-sm btn-block">
+                <svg class="icon"><use href="#icon-phone-off"></use></svg>
+                End meeting for all
+              </button>
+            </div>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="control-bar">
+        <div class="control-group control-group-left">
+          <button id="micBtn" class="control-btn" type="button" aria-label="Mute microphone" aria-pressed="false" title="Mute (M)">
+            <span class="control-icon"><svg class="icon"><use href="#icon-mic"></use></svg></span>
+            <span class="control-label">Mute</span>
+          </button>
+          <button id="camBtn" class="control-btn" type="button" aria-label="Turn camera off" aria-pressed="false" title="Camera (V)">
+            <span class="control-icon"><svg class="icon"><use href="#icon-camera"></use></svg></span>
+            <span class="control-label">Camera</span>
+          </button>
+          <button id="shareBtn" class="control-btn" type="button" aria-label="Share screen" aria-pressed="false" title="Share screen">
+            <span class="control-icon"><svg class="icon"><use href="#icon-screen"></use></svg></span>
+            <span class="control-label">Present</span>
+          </button>
+          <button id="handBtn" class="control-btn" type="button" aria-label="Raise hand" aria-pressed="false" title="Raise hand (H)">
+            <span class="control-icon"><svg class="icon"><use href="#icon-hand"></use></svg></span>
+            <span class="control-label">Raise hand</span>
+          </button>
+        </div>
+
+        <div class="control-group control-group-right">
+          <button id="chatBtn" class="control-btn" type="button" aria-label="Open chat" title="Chat (C)">
+            <span class="control-icon">
+              <svg class="icon"><use href="#icon-chat"></use></svg>
+              <span id="chatUnread" class="unread-badge hidden">0</span>
+            </span>
+            <span class="control-label">Chat</span>
+          </button>
+          <button id="peopleBtn" class="control-btn" type="button" aria-label="Open participants" title="People (P)">
+            <span class="control-icon"><svg class="icon"><use href="#icon-users"></use></svg></span>
+            <span class="control-label">People</span>
+          </button>
+          <button id="leaveBtn" class="control-btn control-btn-danger" type="button" aria-label="Leave meeting" title="Leave">
+            <span class="control-icon"><svg class="icon"><use href="#icon-phone-off"></use></svg></span>
+            <span class="control-label">Leave</span>
+          </button>
+        </div>
+      </footer>
+    </section>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- Toasts + modal                                                     -->
+  <!-- ================================================================== -->
+  <div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <div id="modalBackdrop" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modal-icon" id="modalIcon"><svg class="icon"><use href="#icon-phone-off"></use></svg></div>
+      <h2 id="modalTitle">Title</h2>
+      <p id="modalMessage">Message</p>
+      <div id="modalActions" class="modal-actions"></div>
+    </div>
+  </div>
+
+  <input id="presentVideoInput" type="file" accept="video/*" hidden>
+  <input id="presentPdfInput" type="file" accept="application/pdf,.pdf" hidden>
+
+  <script src="/static/vendor/pdfjs/pdf.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
