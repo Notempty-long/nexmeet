@@ -39,16 +39,17 @@ Requires Python 3.10+.
 
 ```bat
 python3 -m venv .venv
-pip install -r requirements.txt
-.venv/bin/python server.py
+.venv/Scripts\pip install -r requirements.txt
+.venv/Scripts\python server.py
 ```
 
 **macOS / Linux**
 
 ```bash
 python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-python .venv/Scripts\server.py
+python server.py
 ```
 
 Then open <http://localhost:8000>.
