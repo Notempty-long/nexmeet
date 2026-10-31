@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NexMeet - a small, self-hosted WebRTC meeting app built with Flask.
+"""NexMeet - a small, self-hosted WebRTC meeting app built with Quart.
 
 The server has three jobs:
   1. serve the single-page client in ./static
@@ -12,7 +12,7 @@ capped at eight people by default.
 
 Run:
     pip install -r requirements.txt
-    python server.py
+    uvicorn app:app --host 0.0.0.0 --port 8000
     # open http://localhost:8000
 """
 
@@ -29,8 +29,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from flask import Flask, jsonify, request, send_from_directory
-from flask_sock import Sock
+from quart import Quart, jsonify, request, send_file, websocket
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -60,10 +59,9 @@ CSP = (
     "form-action 'self'"
 )
 
-app = Flask(__name__, static_folder="static", static_url_path="/static")
-sock = Sock(app)
+app = Quart(__name__, static_folder="static", static_url_path="/static")
 
-# Flask's dev server is threaded, so all shared room state is guarded.
+# Quart is async, but the room state is still shared across clients; guard it.
 STATE_LOCK = threading.RLock()
 ROOMS: dict[str, "Room"] = {}
 
@@ -124,7 +122,6 @@ class Room:
 
     def promote_host(self) -> Peer | None:
         candidates = sorted(self.peers.values(), key=lambda p: p.joined_at)
-        # In a webinar the host role should go to someone who can speak.
         speakers = [p for p in candidates if p.webinar_role == "panelist"]
         pool = speakers or candidates
         if not pool:
@@ -168,25 +165,24 @@ def ice_servers() -> list[dict[str, Any]]:
     return servers
 
 
-def safe_send(ws: Any, payload: dict[str, Any]) -> None:
+async def safe_send(ws: Any, payload: dict[str, Any]) -> None:
     try:
-        ws.send(json.dumps(payload, ensure_ascii=False))
+        await ws.send(json.dumps(payload, ensure_ascii=False))
     except Exception:
-        # A dead socket is cleaned up by its own receive loop.
         pass
 
 
-def send_error(ws: Any, code: str, message: str) -> None:
-    safe_send(ws, {"type": "error", "code": code, "message": message})
+async def send_error(ws: Any, code: str, message: str) -> None:
+    await safe_send(ws, {"type": "error", "code": code, "message": message})
 
 
-def broadcast(
+async def broadcast(
     room: Room, payload: dict[str, Any], exclude: str | None = None
 ) -> None:
     for peer in list(room.peers.values()):
         if peer.id == exclude:
             continue
-        safe_send(peer.ws, payload)
+        await safe_send(peer.ws, payload)
 
 
 def clean_name(raw: Any) -> str:
@@ -194,7 +190,7 @@ def clean_name(raw: Any) -> str:
     return name[:MAX_NAME_LEN]
 
 
-def leave_room(room: Room, peer: Peer) -> None:
+async def leave_room(room: Room, peer: Peer) -> None:
     """Remove a peer once, promote a new host, and tell the room."""
     if room.peers.get(peer.id) is not peer:
         return
@@ -209,7 +205,7 @@ def leave_room(room: Room, peer: Peer) -> None:
     if was_host or not any(p.role == "host" for p in room.peers.values()):
         promoted = room.promote_host()
         if promoted is not None:
-            broadcast(
+            await broadcast(
                 room,
                 {
                     "type": "host-changed",
@@ -220,7 +216,7 @@ def leave_room(room: Room, peer: Peer) -> None:
                 },
             )
 
-    broadcast(room, {"type": "peer-left", "peerId": peer.id, "name": peer.name})
+    await broadcast(room, {"type": "peer-left", "peerId": peer.id, "name": peer.name})
 
 
 # ---------------------------------------------------------------------------
@@ -229,7 +225,7 @@ def leave_room(room: Room, peer: Peer) -> None:
 
 
 @app.after_request
-def security_headers(response):
+async def security_headers(response):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("Referrer-Policy", "same-origin")
     response.headers.setdefault("X-Frame-Options", "DENY")
@@ -240,19 +236,19 @@ def security_headers(response):
 
 
 @app.get("/")
-def index():
-    return send_from_directory(STATIC_DIR, "index.html")
+async def index():
+    return await send_file(STATIC_DIR / "index.html")
 
 
 @app.get("/room/<room>")
-def room_page(room: str):
+async def room_page(room: str):
     if not ROOM_RE.match(room):
         return "Room not found", 404
-    return send_from_directory(STATIC_DIR, "index.html")
+    return await send_file(STATIC_DIR / "index.html")
 
 
 @app.get("/api/config")
-def config():
+async def config():
     return jsonify(
         {
             "iceServers": ice_servers(),
@@ -262,7 +258,7 @@ def config():
 
 
 @app.get("/api/health")
-def health():
+async def health():
     return jsonify({"ok": True})
 
 
@@ -271,14 +267,15 @@ def health():
 # ---------------------------------------------------------------------------
 
 
-@sock.route("/ws")
-def websocket_handler(ws):
+@app.websocket("/ws")
+async def websocket_handler():
     peer: Peer | None = None
     room: Room | None = None
+    ws = websocket
 
     try:
         while True:
-            raw = ws.receive()
+            raw = await websocket.receive()
             if raw is None:
                 break
 
@@ -292,19 +289,18 @@ def websocket_handler(ws):
             kind = data.get("type")
 
             with STATE_LOCK:
-                # ---- join --------------------------------------------
                 if kind == "join":
                     if peer is not None:
-                        send_error(ws, "ALREADY_JOINED", "You are already in a room.")
+                        await send_error(ws, "ALREADY_JOINED", "You are already in a room.")
                         continue
 
                     room_id = str(data.get("room", "")).strip()
                     name = clean_name(data.get("name"))
                     if not ROOM_RE.match(room_id):
-                        send_error(ws, "INVALID_ROOM", "That room code is not valid.")
+                        await send_error(ws, "INVALID_ROOM", "That room code is not valid.")
                         continue
                     if not name:
-                        send_error(ws, "INVALID_NAME", "Please enter your name.")
+                        await send_error(ws, "INVALID_NAME", "Please enter your name.")
                         continue
 
                     target = ROOMS.get(room_id)
@@ -316,7 +312,7 @@ def websocket_handler(ws):
                         )
                         ROOMS[room_id] = target
                     if len(target.peers) >= MAX_PARTICIPANTS:
-                        send_error(
+                        await send_error(
                             ws,
                             "ROOM_FULL",
                             "This room is full. Try again in a moment.",
@@ -347,7 +343,7 @@ def websocket_handler(ws):
                     room = target
 
                     host = room.host()
-                    safe_send(
+                    await safe_send(
                         ws,
                         {
                             "type": "joined",
@@ -366,7 +362,7 @@ def websocket_handler(ws):
                             "chat": room.chat[-MAX_CHAT_HISTORY:],
                         },
                     )
-                    broadcast(
+                    await broadcast(
                         room,
                         {"type": "peer-joined", "participant": peer.public()},
                         exclude=peer.id,
@@ -374,33 +370,29 @@ def websocket_handler(ws):
                     continue
 
                 if peer is None or room is None:
-                    send_error(ws, "NOT_JOINED", "Join a room first.")
+                    await send_error(ws, "NOT_JOINED", "Join a room first.")
                     continue
 
-                # ---- WebRTC signalling -------------------------------
                 if kind == "signal":
                     target = room.peers.get(str(data.get("to", "")))
                     payload = data.get("data")
                     if target is not None and isinstance(payload, dict):
-                        safe_send(
+                        await safe_send(
                             target.ws,
                             {"type": "signal", "from": peer.id, "data": payload},
                         )
                     continue
 
-                # ---- media / hand state ------------------------------
                 if kind == "state":
                     incoming = data.get("state")
                     if not isinstance(incoming, dict):
                         continue
                     if room.mode == "webinar" and peer.webinar_role == "audience":
-                        # Audiences only control their hand: the server is the
-                        # source of truth for who may publish audio or video.
                         incoming = {"hand": incoming.get("hand")}
                     for key in ("mic", "cam", "hand", "sharing"):
                         if isinstance(incoming.get(key), bool):
                             setattr(peer, key, incoming[key])
-                    broadcast(
+                    await broadcast(
                         room,
                         {
                             "type": "state",
@@ -411,14 +403,13 @@ def websocket_handler(ws):
                     )
                     continue
 
-                # ---- chat --------------------------------------------
                 if kind == "chat":
                     now = time.time()
                     peer.chat_times = [
                         t for t in peer.chat_times if now - t < CHAT_BURST_WINDOW
                     ]
                     if len(peer.chat_times) >= CHAT_BURST:
-                        send_error(
+                        await send_error(
                             ws,
                             "CHAT_RATE_LIMIT",
                             "You are sending messages too quickly.",
@@ -440,15 +431,14 @@ def websocket_handler(ws):
                     }
                     room.chat.append(entry)
                     if len(room.chat) > MAX_CHAT_HISTORY:
-                        del room.chat[: -MAX_CHAT_HISTORY]
-                    broadcast(room, {"type": "chat", "message": entry})
+                        del room.chat[:-MAX_CHAT_HISTORY]
+                    await broadcast(room, {"type": "chat", "message": entry})
                     continue
 
-                # ---- host controls -----------------------------------
                 if kind == "host":
                     host = room.host()
                     if host is None or host.id != peer.id:
-                        send_error(ws, "FORBIDDEN", "Only the host can do that.")
+                        await send_error(ws, "FORBIDDEN", "Only the host can do that.")
                         continue
 
                     action = data.get("action")
@@ -460,8 +450,8 @@ def websocket_handler(ws):
                             if target.webinar_role == "audience":
                                 continue
                             target.mic = False
-                            safe_send(target.ws, {"type": "force-mute"})
-                            broadcast(
+                            await safe_send(target.ws, {"type": "force-mute"})
+                            await broadcast(
                                 room,
                                 {
                                     "type": "state",
@@ -479,8 +469,8 @@ def websocket_handler(ws):
                         if target.webinar_role == "audience":
                             continue
                         target.mic = False
-                        safe_send(target.ws, {"type": "force-mute"})
-                        broadcast(
+                        await safe_send(target.ws, {"type": "force-mute"})
+                        await broadcast(
                             room,
                             {
                                 "type": "state",
@@ -493,7 +483,7 @@ def websocket_handler(ws):
 
                     if action in ("promote", "demote"):
                         if room.mode != "webinar":
-                            send_error(
+                            await send_error(
                                 ws,
                                 "NOT_WEBINAR",
                                 "Only webinar participants have speaking roles.",
@@ -516,7 +506,7 @@ def websocket_handler(ws):
                             target.hand = False
                             target.mic = True
                             target.cam = False
-                        broadcast(
+                        await broadcast(
                             room,
                             {
                                 "type": "webinar-role",
@@ -525,7 +515,7 @@ def websocket_handler(ws):
                                 "role": new_role,
                             },
                         )
-                        broadcast(
+                        await broadcast(
                             room,
                             {
                                 "type": "state",
@@ -541,14 +531,14 @@ def websocket_handler(ws):
                         if target is None or target.id == peer.id:
                             continue
                         del room.peers[target.id]
-                        safe_send(
+                        await safe_send(
                             target.ws,
                             {
                                 "type": "removed",
                                 "reason": "The host removed you from the meeting.",
                             },
                         )
-                        broadcast(
+                        await broadcast(
                             room,
                             {
                                 "type": "peer-left",
@@ -557,7 +547,7 @@ def websocket_handler(ws):
                             },
                         )
                         try:
-                            target.ws.close()
+                            await target.ws.close()
                         except Exception:
                             pass
                         continue
@@ -567,13 +557,13 @@ def websocket_handler(ws):
                         ROOMS.pop(room.id, None)
                         room.peers.clear()
                         for target in peers:
-                            safe_send(
+                            await safe_send(
                                 target.ws,
                                 {"type": "meeting-ended", "by": peer.name},
                             )
                         for target in peers:
                             try:
-                                target.ws.close()
+                                await target.ws.close()
                             except Exception:
                                 pass
                         continue
@@ -581,22 +571,17 @@ def websocket_handler(ws):
     finally:
         with STATE_LOCK:
             if peer is not None and room is not None:
-                leave_room(room, peer)
+                await leave_room(room, peer)
         try:
-            ws.close()
+            await websocket.close()
         except Exception:
             pass
 
 
 def main() -> None:
-    ssl_context = None
-    cert = os.getenv("SSL_CERT", "").strip()
-    key = os.getenv("SSL_KEY", "").strip()
-    if cert and key:
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(cert, key)
-
-    scheme = "https" if ssl_context else "http"
+    ssl_cert = os.getenv("SSL_CERT", "").strip()
+    ssl_key = os.getenv("SSL_KEY", "").strip()
+    scheme = "https" if ssl_cert and ssl_key else "http"
     print()
     print("  NexMeet is running")
     print(f"  -> {scheme}://localhost:{PORT}")
@@ -604,14 +589,22 @@ def main() -> None:
     print("  Press Ctrl+C to stop.")
     print()
 
-    app.run(
-        host=HOST,
-        port=PORT,
-        threaded=True,
-        debug=False,
-        use_reloader=False,
-        ssl_context=ssl_context,
-    )
+    if ssl_cert and ssl_key:
+        import uvicorn
+
+        uvicorn.run(
+            app,
+            host=HOST,
+            port=PORT,
+            ssl_certfile=ssl_cert,
+            ssl_keyfile=ssl_key,
+            log_level="info",
+        )
+        return
+
+    import uvicorn
+
+    uvicorn.run(app, host=HOST, port=PORT, log_level="info")
 
 
 if __name__ == "__main__":
