@@ -112,7 +112,7 @@ Rules:
 
 ## Don'ts
 
-- Don't add npm, a bundler, a framework, or a database.
+- Don't add a database.
 - Don't rely on internet access at runtime (no CDN links, no remote PDF.js).
 - Don't change the signalling protocol without updating both tests and the protocol section above.
 - Don't commit `.venv/`, `logs/`, or `*.log`.
